@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HTML Minifier & QR Tool</title>
+  <style>
+    /* General Body Styles */
+    body {
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(135deg, #1c1c1c, #3b3b3b);
+      color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      flex-direction: column;
+    }
+
+    .container {
+      max-width: 700px;
+      padding: 20px;
+      background: #282828;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+      width: 100%;
+    }
+
+    h2, h3 {
+      color: #4caf50;
+      text-align: center;
+      margin-bottom: 15px;
+    }
+
+    /* Input Fields */
+    textarea, input, button {
+      width: 100%;
+      margin: 10px 0;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      background: #333;
+      color: #f4f4f4;
+      font-size: 1rem;
+    }
+
+    textarea {
+      resize: none;
+    }
+
+    button {
+      background: #4caf50;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.2s;
+    }
+
+    button:hover {
+      background: #45a049;
+      transform: scale(1.05);
+    }
+
+    /* Progress Bar */
+    .progress-bar {
+      background: #444;
+      border-radius: 10px;
+      height: 20px;
+      margin: 10px 0;
+      overflow: hidden;
+    }
+
+    .progress {
+      background: #4caf50;
+      height: 100%;
+      width: 0%;
+      transition: width 0.3s;
+    }
+
+    /* QR Code Container */
+    .qr-container {
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    .qr-container img {
+      max-width: 100%;
+      border: 2px solid #4caf50;
+      border-radius: 10px;
+      margin-top: 10px;
+    }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 0.9rem;
+      color: #aaa;
+    }
+
+    /* File Upload */
+    .file-upload {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .file-upload input {
+      width: 80%;
+    }
+
+    .file-upload button {
+      width: 18%;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h2>HTML Minifier & QR Generator</h2>
+    <h3>Step 1: Minify HTML</h3>
+    <textarea id="htmlInput" placeholder="Paste your HTML code here..." rows="6"></textarea>
+    <button onclick="minifyHTML()">Minify HTML</button>
+    <textarea id="minifiedHTML" placeholder="Minified HTML code..." rows="4" readonly></textarea>
+    <div class="progress-bar">
+      <div class="progress" id="progress"></div>
+    </div>
+    <p id="spaceLeft" style="text-align: center;">Remaining Space: 2.7 KB</p>
+
+    <h3>Step 2: Convert HTML to Data URL</h3>
+    <button onclick="convertToDataURL()">Convert to Data URL</button>
+    <textarea id="dataURL" placeholder="Data URL will appear here..." rows="4" readonly></textarea>
+    
+    <h3>Step 3: Generate QR Code</h3>
+    <button onclick="generateQRCode()">Generate QR Code</button>
+    <div class="qr-container" id="qrCode"></div>
+
+    <!-- Add Download Button -->
+    <button id="downloadQR" style="display: none;" onclick="downloadQRCode()">Download QR Code</button>
+
+    <button onclick="clearAll()">Clear All</button> <!-- Clear All Button -->
+
+    <div class="footer">
+      <p>&copy; 2025 - HTML Minifier Tool | Created with 💚</p>
+    </div>
+  </div>
+
+  <script>
+    function minifyHTML() {
+      const input = document.getElementById("htmlInput").value;
+      const minified = input.replace(/\s+/g, " ").trim();
+      const size = new Blob([minified]).size;
+      document.getElementById("minifiedHTML").value = minified;
+      const progress = Math.min((size / 2700) * 100, 100);
+      document.getElementById("progress").style.width = progress + "%";
+      const spaceLeft = 2700 - size;
+      document.getElementById("spaceLeft").innerText = `Remaining Space: ${spaceLeft} bytes`;
+    }
+
+    function convertToDataURL() {
+      const minifiedHTML = document.getElementById("minifiedHTML").value;
+      if (!minifiedHTML) {
+        alert("Please minify the HTML first!");
+        return;
+      }
+      const dataURL = `data:text/html;base64,${btoa(minifiedHTML)}`;
+      document.getElementById("dataURL").value = dataURL;
+      copyToClipboard(dataURL);
+    }
+
+    function generateQRCode() {
+      const dataURL = document.getElementById("dataURL").value;
+      if (!dataURL) {
+        alert("Please convert the HTML to a Data URL first!");
+        return;
+      }
+      const qrCodeContainer = document.getElementById("qrCode");
+      qrCodeContainer.innerHTML = "";
+      const qrImg = document.createElement("img");
+      qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(dataURL)}&size=200x200`;
+      qrCodeContainer.appendChild(qrImg);
+
+      // Show Download QR button
+      document.getElementById("downloadQR").style.display = "inline-block";
+      // Store image src for downloading
+      window.qrImageSrc = qrImg.src;
+    }
+
+    function downloadQRCode() {
+      const link = document.createElement('a');
+      link.href = window.qrImageSrc;
+      link.download = 'qr-code.png';
+      link.click();
+    }
+
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        alert("Copied to clipboard!");
+      }).catch(err => {
+        console.error('Error copying text: ', err);
+      });
+    }
+
+    function clearAll() {
+      document.getElementById("htmlInput").value = "";
+      document.getElementById("minifiedHTML").value = "";
+      document.getElementById("dataURL").value = "";
+      document.getElementById("qrCode").innerHTML = "";
+      document.getElementById("progress").style.width = "0%";
+      document.getElementById("spaceLeft").innerText = "Remaining Space: 2.7 KB";
+      document.getElementById("downloadQR").style.display = "none"; // Hide Download button
+    }
+  </script>
+</body>
+
+</html>
